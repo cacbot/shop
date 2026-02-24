@@ -1,0 +1,42 @@
+repeat task.wait() until game:IsLoaded()
+repeat task.wait() until game.Players.LocalPlayer
+repeat task.wait() until game:GetService("HttpService")
+repeat task.wait() until game:GetService("TeleportService")
+
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local PLACE_ID = game.PlaceId
+
+task.wait(300)
+
+local servers = {}
+local cursor = ""
+
+for i = 1, 5 do
+    local url = "https://games.roblox.com/v1/games/" .. PLACE_ID .. "/servers/Public?sortOrder=Asc&limit=100"
+    if cursor and cursor ~= "" then
+        url = url .. "&cursor=" .. cursor
+    end
+    
+    local success, result = pcall(HttpService.GetAsync, HttpService, url)
+    if not success then break end
+    
+    local data = HttpService:JSONDecode(result)
+    
+    for _, server in pairs(data.data) do
+        if server.id ~= game.JobId and server.playing < server.maxPlayers and server.playing >= 4 then
+            table.insert(servers, server)
+        end
+    end
+    
+    cursor = data.nextPageCursor
+    if not cursor then break end
+    
+    task.wait(0.5)
+end
+
+table.sort(servers, function(a, b) return a.playing > b.playing end)
+
+if servers[1] then
+    TeleportService:TeleportToPlaceInstance(PLACE_ID, servers[1].id)
+end
