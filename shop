@@ -1,38 +1,58 @@
-game.Loaded:Wait()
+-- Wait for game load
+if not game:IsLoaded() then game.Loaded:Wait() end
 
-local a=game:GetService
-local b=a(Players)
-local c=a(HttpService)
-local d=a(TeleportService)
-local e=game.PlaceId
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local PlaceId = game.PlaceId
 
-wait(300)
+-- This will pause the script for 5 minutes
+task.wait(300)
 
-local f=nil
-local g=0
-local h=
+local targetServer = nil
+local maxPlayersFound = 0
+local cursor = ""
 
-for i=1,7 do
-local j=https://games.roblox.com/v1/games/..e..../servers/Public?sortOrder=Asc&limit=100
-if h~=""then j=j..&cursor=..h end
+for i = 1, 7 do
+    -- Constructing the API URL with proper concatenation
+    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    if cursor ~= "" then 
+        url = url .. "&cursor=" .. cursor 
+    end
 
-local k,p=pcall(c.GetAsync,c,j)
-if not k then task.wait(1.5)continue end
+    -- Safely get the server list
+    local success, response = pcall(function()
+        return HttpService:GetAsync(url)
+    end)
 
-local l,m=pcall(c.JSONDecode,c,p)
-if not l or not m or not m.data then task.wait(1)continue end
+    if not success then 
+        task.wait(1) 
+        continue 
+    end
 
-for _,n in m.data do
-if n.id==game.JobId then continue end
-if n.playing>=n.maxPlayers then continue end
-if n.playing<=g then continue end
-g=n.playing
-f=n
+    local data = HttpService:JSONDecode(response)
+    if not data or not data.data then break end
+
+    for _, server in ipairs(data.data) do
+        -- Ensure we aren't joining our current server or a full one
+        if server.id ~= game.JobId and server.playing < server.maxPlayers then
+            -- Logic to find the most populated available server
+            if server.playing > maxPlayersFound then
+                maxPlayersFound = server.playing
+                targetServer = server
+            end
+        end
+    end
+
+    -- Update cursor for the next page of results
+    cursor = data.nextPageCursor
+    if not cursor or cursor == "" then break end
+    task.wait(0.5)
 end
 
-h=m.nextPageCursor or 
-if h==""then break end
-task.wait(1.3)
+-- Teleport the local player
+if targetServer then
+    TeleportService:TeleportToPlaceInstance(PlaceId, targetServer.id, Players.LocalPlayer)
+else
+    warn("Could not find a better server after 5 minutes.")
 end
-
-if f then d:TeleportToPlaceInstance(e,f.id)end
