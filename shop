@@ -1,42 +1,31 @@
-repeat task.wait() until game:IsLoaded()
-repeat task.wait() until game.Players.LocalPlayer
-repeat task.wait() until game:GetService("HttpService")
-repeat task.wait() until game:GetService("TeleportService")
+game.Loaded:Wait()
 
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local PLACE_ID = game.PlaceId
+local HS = game:GetService("HttpService")
+local TS = game:GetService("TeleportService")
+local id = game.PlaceId
 
-task.wait(300)
+wait(300)
 
-local servers = {}
-local cursor = ""
+local best, maxp, cur = nil, 0, ""
 
-for i = 1, 5 do
-    local url = "https://games.roblox.com/v1/games/" .. PLACE_ID .. "/servers/Public?sortOrder=Asc&limit=100"
-    if cursor and cursor ~= "" then
-        url = url .. "&cursor=" .. cursor
-    end
-    
-    local success, result = pcall(HttpService.GetAsync, HttpService, url)
-    if not success then break end
-    
-    local data = HttpService:JSONDecode(result)
-    
-    for _, server in pairs(data.data) do
-        if server.id ~= game.JobId and server.playing < server.maxPlayers and server.playing >= 4 then
-            table.insert(servers, server)
+for _ = 1, 6 do
+    local u = "https://games.roblox.com/v1/games/"..id.."/servers/Public?sortOrder=Asc&limit=100"
+    if cur ~= "" then u ..= "&cursor="..cur end
+
+    local s,r = pcall(HS.GetAsync, HS, u)
+    if not s then task.wait(1.5) continue end
+
+    local d = HS:JSONDecode(r)
+    for _,v in d.data do
+        if v.id ~= game.JobId and v.playing < v.maxPlayers and v.playing > maxp then
+            maxp = v.playing
+            best = v
         end
     end
-    
-    cursor = data.nextPageCursor
-    if not cursor then break end
-    
-    task.wait(0.5)
+
+    cur = d.nextPageCursor or ""
+    if cur == "" then break end
+    task.wait(1.3)
 end
 
-table.sort(servers, function(a, b) return a.playing > b.playing end)
-
-if servers[1] then
-    TeleportService:TeleportToPlaceInstance(PLACE_ID, servers[1].id)
-end
+if best then TS:TeleportToPlaceInstance(id, best.id) end
