@@ -1,9 +1,9 @@
 -- Wait for game load
 if not game:IsLoaded() then game.Loaded:Wait() end
 
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService(Players)
+local HttpService = game:GetService(HttpService)
+local TeleportService = game:GetService(TeleportService)
 local PlaceId = game.PlaceId
 
 -- This will pause the script for 5 minutes
@@ -11,13 +11,13 @@ task.wait(300)
 
 local targetServer = nil
 local maxPlayersFound = 0
-local cursor = ""
+local cursor = 
 
 for i = 1, 7 do
     -- Constructing the API URL with proper concatenation
-    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-    if cursor ~= "" then 
-        url = url .. "&cursor=" .. cursor 
+    local url = https://games.roblox.com/v1/games/ .. PlaceId .. /servers/Public?sortOrder=Asc&limit=100
+    if cursor ~=  then 
+        url = url .. &cursor= .. cursor 
     end
 
     -- Safely get the server list
@@ -34,7 +34,7 @@ for i = 1, 7 do
     if not data or not data.data then break end
 
     for _, server in ipairs(data.data) do
-        -- Ensure we aren't joining our current server or a full one
+        -- Ensure we arent joining our current server or a full one
         if server.id ~= game.JobId and server.playing < server.maxPlayers then
             -- Logic to find the most populated available server
             if server.playing > maxPlayersFound then
@@ -46,7 +46,7 @@ for i = 1, 7 do
 
     -- Update cursor for the next page of results
     cursor = data.nextPageCursor
-    if not cursor or cursor == "" then break end
+    if not cursor or cursor ==  then break end
     task.wait(0.5)
 end
 
@@ -54,5 +54,5 @@ end
 if targetServer then
     TeleportService:TeleportToPlaceInstance(PlaceId, targetServer.id, Players.LocalPlayer)
 else
-    warn("Could not find a better server after 5 minutes.")
+    warn(Could not find a better server after 5 minutes.)
 end
